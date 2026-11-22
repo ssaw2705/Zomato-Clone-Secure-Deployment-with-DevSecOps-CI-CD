@@ -1,32 +1,16 @@
-# Use an official Node.js image as the base (LTS version for stability)
-FROM node:18-alpine AS builder
-
-# Set the working directory inside the container
+# ---- Build stage ----
+# react-scripts 3.x (webpack 4) cần Node 16 để tránh lỗi ERR_OSSL_EVP_UNSUPPORTED
+FROM node:16-alpine AS builder
 WORKDIR /app
-
-# Copy package.json and package-lock.json first (Leverage Docker cache)
 COPY package*.json ./
-
-# Install dependencies in a clean environment
-RUN npm ci --only=production
-
-# Copy the rest of the application source code
+RUN npm install
 COPY . .
-
-# Build the React app
 RUN npm run build
 
-# ---- Production Stage ----
-FROM node:18-alpine
-
-# Set the working directory
+# ---- Run stage: phục vụ bản build tĩnh ----
+FROM node:16-alpine
 WORKDIR /app
-
-# Copy the built React app from the builder stage
-COPY --from=builder /app .
-
-# Expose the port the app runs on
+RUN npm install -g serve
+COPY --from=builder /app/build ./build
 EXPOSE 3000
-
-# Start the application
-CMD ["npm", "start"]
+CMD ["serve", "-s", "build", "-l", "3000"]

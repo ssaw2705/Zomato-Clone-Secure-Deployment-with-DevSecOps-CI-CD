@@ -1,137 +1,107 @@
-# 🍽️ **Zomato Clone: Secure Deployment with DevSecOps CI/CD**  
+# 🍽 Zomato Clone – DevSecOps CI/CD (Đồ án nhóm)
 
-![Zomato Clone](https://miro.medium.com/v2/resize:fit:1400/format:webp/1*X_hm5iF0NRjbOZHB6RQIFA.jpeg)  
+Triển khai ứng dụng React "Zomato Clone" bằng pipeline DevSecOps trên **1 máy AWS EC2**:
 
-🚀 **A full-stack Zomato Clone with DevSecOps integration for a secure and scalable deployment.**  
-
-This **Zomato Clone: Secure Deployment with DevSecOps CI/CD** repository is a **full-stack food delivery application** inspired by Zomato. It includes a **React.js frontend** and integrates DevSecOps practices to ensure a secure and automated deployment pipeline.  
-
-## 🔹 **Key Features:**  
-
-✅ **User-friendly UI** – Interactive menu, checkout, and order tracking.  
-✅ **Secure DevOps Pipeline** – CI/CD automation with security checks.  
-✅ **Optimized Deployment** – Uses containerization & cloud hosting.  
-✅ **React.js-Based Frontend** – Built with Create React App.  
-✅ **Production-Ready** – Includes build optimizations & best practices.  
-
-> This repo is a great **learning project** for those interested in **DevSecOps, CI/CD, and secure web app deployment**. 🚀
-
-🔗 **Read the detailed blog post:** [Zomato Clone - Secure Deployment with DevSecOps CI/CD](https://blog.prodevopsguytech.com/zomato-clone-secure-deployment-with-devsecops-cicd)  
-
-## 📸 **Project Screenshots**  
-
-| Home Page | Menu View | Checkout Page |  
-|-----------|----------|---------------|  
-| ![](https://miro.medium.com/v2/resize:fit:750/format:webp/1*xVxk3tSbk9yA6hel60t13g.png) | ![](https://miro.medium.com/v2/resize:fit:750/format:webp/1*KOwp6K2sOcSmDyk9Axnvhw.png) | ![](https://miro.medium.com/v2/resize:fit:750/format:webp/1*t1x_F_qwHI6anvRHS59OxA.png) |  
-
----
-
-## 🛠️ **Getting Started**  
-
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).  
-
-### 🔧 **Prerequisites**  
-
-Ensure you have **Node.js** and **npm** installed.  
-
-```sh
-node -v   # Check Node.js version
-npm -v    # Check npm version
+```
+GitHub ──► Jenkins ──► SonarQube (chất lượng code + Quality Gate)
+                   ──► npm install
+                   ──► OWASP Dependency-Check + Trivy FS (quét thư viện / mã nguồn)
+                   ──► Docker build & push lên Docker Hub
+                   ──► Trivy image scan
+                   ──► docker run → http://<EC2_IP>:3000
 ```
 
-### 📦 **Installation**  
+Nguồn app: [NotHarshhaa/Zomato-Clone](https://github.com/NotHarshhaa/Zomato-Clone) · Hướng dẫn gốc: [blog ProDevOpsGuy](https://blog.prodevopsguytech.com/zomato-clone-secure-deployment-with-devsecops-cicd)
 
-Clone the repository and install dependencies:  
+## Cấu trúc repo
 
-```sh
-git clone https://github.com/your-repo/zomato-clone.git  
-cd zomato-clone  
-npm install  
+| Đường dẫn | Mô tả |
+|---|---|
+| `src/`, `public/` | Mã nguồn React |
+| `Dockerfile` | Build bằng Node 16, chạy bản build tĩnh bằng `serve` ở cổng 3000 |
+| `Jenkinsfile` | Pipeline DevSecOps (Jenkins đọc từ repo) |
+| `sonar-project.properties` | Cấu hình SonarQube Scanner |
+| `scripts/` | Script cài Jenkins, Docker + SonarQube, Trivy trên EC2 |
+| `docs/APP_README.md` | README gốc của app |
+
+## Chạy app ở máy local
+
+```bash
+npm install
+npm start            # http://localhost:3000  (dùng Node 16)
+# hoặc bằng Docker
+docker build -t zomato . && docker run -d -p 3000:3000 zomato
 ```
 
-### 🚀 **Running the App**  
+## Triển khai hạ tầng (1 người làm, cả nhóm dùng chung)
 
-Start the development server:  
+### 1. EC2
+- Ubuntu 22.04, **t2.large**, ổ 30GB.
+- Security Group inbound: `22`, `8080` (Jenkins), `9000` (SonarQube), `3000` (app).
 
-```sh
-npm start  
+### 2. Cài công cụ
+```bash
+git clone <URL_REPO_NHÓM> && cd zomato-devsecops/scripts
+chmod +x *.sh
+./jenkins.sh        # in ra mật khẩu admin Jenkins
+./docker-sonar.sh
+./trivy.sh
 ```
+Mở `http://<IP>:8080` → Install suggested plugins → tạo user admin (tạo thêm user cho từng thành viên trong *Manage Jenkins → Users*).
 
-🔗 Open [http://localhost:3000](http://localhost:3000) in your browser.  
+### 3. Plugin Jenkins
+*Manage Jenkins → Plugins*: Eclipse Temurin Installer, SonarQube Scanner, NodeJS, OWASP Dependency-Check, Docker, Docker Commons, Docker Pipeline, Docker API, docker-build-step.
 
----
+### 4. Tools (tên phải đúng)
 
-## 📜 **Available Scripts**  
+| Loại | Tên | Cấu hình |
+|---|---|---|
+| JDK | `jdk17` | Install from adoptium.net – jdk-17 |
+| NodeJS | `node16` | NodeJS 16.x |
+| SonarQube Scanner | `sonar-scanner` | latest |
+| Dependency-Check | `DP-Check` | Install from github.com |
+| Docker | `docker` | latest |
 
-| Command | Description |  
-|---------|------------|  
-| `npm start` | Runs the app in development mode |  
-| `npm test` | Launches the test runner |  
-| `npm run build` | Builds the app for production |  
-| `npm run eject` | Ejects the default configuration (irreversible) |  
+### 5. SonarQube + Credentials
+1. SonarQube (`admin/admin`, đổi mật khẩu) → *My Account → Security* → tạo token.
+2. Jenkins *Credentials → Global*:
+   - **Secret text**, ID `Sonar-token` = token SonarQube
+   - **Username with password**, ID `docker` = tài khoản Docker Hub
+3. *Manage Jenkins → System → SonarQube servers*: Name `sonar-server`, URL `http://<IP>:9000`, token `Sonar-token`.
+4. SonarQube *Administration → Configuration → Webhooks*: `http://<IP>:8080/sonarqube-webhook/`
 
-For more details, check the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).  
+### 6. Tạo job
+- Sửa `DOCKERHUB_USER` trong `Jenkinsfile` → commit.
+- Jenkins → *New Item* → `zomato` → **Pipeline** → *Definition: Pipeline script from SCM* → Git → URL repo nhóm, branch `*/master`, Script Path `Jenkinsfile`.
+  (Repo private: thêm credential GitHub username + Personal Access Token.)
+- *Build Now*. Lần đầu OWASP tải NVD mất 10–30 phút.
 
----
+### 7. Kiểm tra
+- App: `http://<IP>:3000`
+- SonarQube: project `zomato`
+- Báo cáo Trivy: Artifacts của mỗi build (`trivyfs.txt`, `trivy.txt`)
 
-## 🚢 **Deployment**  
+> ⚠️ Xong việc nhớ **Stop/Terminate EC2** để không bị tính phí.
 
-### 🔥 **Build for Production**  
+## Quy trình làm việc nhóm
 
-```sh
-npm run build  
-```
+1. Không commit thẳng vào `master`. Tạo nhánh: `git checkout -b feature/<ten-viec>`
+2. Commit nhỏ, rõ ràng → `git push -u origin feature/<ten-viec>`
+3. Mở **Pull Request** vào `master`, ít nhất 1 người review.
+4. Merge xong → chạy lại job Jenkins (hoặc cấu hình GitHub webhook `http://<IP>:8080/github-webhook/` để tự chạy).
 
-📂 The app is built in the `build/` folder, ready for deployment.  
+## Phân công gợi ý
 
-### 🌍 **Hosting**  
+| Hạng mục | Người phụ trách |
+|---|---|
+| EC2 + cài Jenkins/Docker/SonarQube/Trivy | |
+| Cấu hình Jenkins (plugin, tools, credentials) | |
+| Pipeline + Dockerfile | |
+| Báo cáo bảo mật (Sonar, OWASP, Trivy) + slide | |
+| Mở rộng: Kubernetes / Terraform / Prometheus + Grafana | |
 
-You can deploy this project on:  
-
-- **Vercel** ([Docs](https://vercel.com/docs))  
-- **Netlify** ([Docs](https://docs.netlify.com/))  
-- **AWS Amplify** ([Docs](https://docs.aws.amazon.com/amplify/latest/userguide/welcome.html))  
-
----
-
-## 📚 Learn More  
-
-- 🏗️ [React Documentation](https://reactjs.org/)  
-- ⚡ [Code Splitting](https://facebook.github.io/create-react-app/docs/code-splitting)  
-- 🔍 [Analyzing Bundle Size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)  
-- 📲 [Making a Progressive Web App](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)  
-
----
-
-## 🤝 **Contributing**  
-
-Contributions are welcome! If you'd like to improve this project, feel free to submit a pull request.  
-
----
-
-## **Hit the Star!** ⭐
-
-**If you find this repository helpful and plan to use it for learning, please give it a star. Your support is appreciated!**
-
----
-
-## 🛠️ **Author & Community**  
-
-This project is crafted by **[Harshhaa](https://github.com/NotHarshhaa)** 💡.  
-I’d love to hear your feedback! Feel free to share your thoughts.  
-
----
-
-### 📧 **Connect with me:**
-
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-%230077B5.svg?style=for-the-badge&logo=linkedin&logoColor=white)](https://linkedin.com/in/harshhaa-vardhan-reddy) [![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/NotHarshhaa)  [![Telegram](https://img.shields.io/badge/Telegram-26A5E4?style=for-the-badge&logo=telegram&logoColor=white)](https://t.me/prodevopsguy) [![Dev.to](https://img.shields.io/badge/Dev.to-0A0A0A?style=for-the-badge&logo=dev.to&logoColor=white)](https://dev.to/notharshhaa) [![Hashnode](https://img.shields.io/badge/Hashnode-2962FF?style=for-the-badge&logo=hashnode&logoColor=white)](https://hashnode.com/@prodevopsguy)  
-
----
-
-### 📢 **Stay Connected**  
-
-![Follow Me](https://imgur.com/2j7GSPs.png)
-
----
-
-### 🎉 **Happy Coding!** 🚀  
+## Lỗi thường gặp
+- **Quality Gate treo**: sai URL webhook hoặc chưa mở cổng 8080.
+- **permission denied /var/run/docker.sock**: `sudo usermod -aG docker jenkins && sudo systemctl restart jenkins`.
+- **SonarQube tự tắt**: thiếu RAM hoặc thiếu `vm.max_map_count=262144`.
+- **ERR_OSSL_EVP_UNSUPPORTED**: đang dùng Node ≥17; dùng Node 16.
