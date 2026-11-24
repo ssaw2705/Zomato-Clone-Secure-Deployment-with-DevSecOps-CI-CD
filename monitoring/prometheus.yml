@@ -1,0 +1,27 @@
+# Cấu hình Prometheus – chạy trên cùng EC2 với Jenkins
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    project: zomato-devsecops
+
+scrape_configs:
+  # Bản thân Prometheus
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  # Metrics hệ thống EC2 (CPU, RAM, ổ đĩa, mạng) – Node Exporter
+  - job_name: node_exporter
+    static_configs:
+      - targets: ["localhost:9100"]
+        labels:
+          instance: zomato-ec2
+
+  # Jenkins – cần cài plugin "Prometheus metrics" (endpoint /prometheus/)
+  - job_name: jenkins
+    metrics_path: /prometheus/
+    static_configs:
+      - targets: ["localhost:8080"]
+        labels:
+          instance: jenkins
