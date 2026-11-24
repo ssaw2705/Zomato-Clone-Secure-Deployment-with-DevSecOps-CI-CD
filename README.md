@@ -96,7 +96,7 @@ Mở `http://<IP>:8080` → Install suggested plugins → tạo user admin (tạ
 |---|---|
 | EC2 + cài Jenkins/Docker/SonarQube/Trivy | |
 | Cấu hình Jenkins (plugin, tools, credentials) | |
-| Pipeline + Dockerfile | |
+| Pipeline + Dockerfile | Thanh Duy |
 | Báo cáo bảo mật (Sonar, OWASP, Trivy) + slide | |
 | Mở rộng: Kubernetes / Terraform / Prometheus + Grafana | |
 
