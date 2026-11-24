@@ -1,0 +1,17 @@
+# Copy thành terraform.tfvars rồi sửa (terraform.tfvars KHÔNG được commit)
+aws_region    = "ap-southeast-1"
+instance_type = "t2.large"
+
+# Nên giới hạn SSH về IP của bạn: curl ifconfig.me  =>  "x.x.x.x/32"
+ssh_cidr     = "0.0.0.0/0"
+allowed_cidr = "0.0.0.0/0"
+
+# Để trống => Terraform tự sinh key zomato-devsecops-key.pem
+public_key_path = ""
+
+repo_url    = "https://github.com/ssaw2705/Zomato-Clone-Secure-Deployment-with-DevSecOps-CI-CD.git"
+repo_branch = "master"
+
+# Cảnh báo chi phí (để trống nếu không cần)
+budget_email     = ""
+budget_limit_usd = 20

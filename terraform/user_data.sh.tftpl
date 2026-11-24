@@ -1,0 +1,41 @@
+#!/bin/bash
+# user_data: chạy 1 lần khi EC2 khởi động lần đầu (quyền root).
+# Log: /var/log/user-data.log   |   Theo dõi: sudo tail -f /var/log/user-data.log
+exec > >(tee -a /var/log/user-data.log) 2>&1
+echo "===== user_data bắt đầu: $(date) ====="
+
+export DEBIAN_FRONTEND=noninteractive
+apt-get update -y
+apt-get install -y git curl wget unzip
+
+REPO_DIR=/opt/zomato-devsecops
+git clone --branch "${repo_branch}" --depth 1 "${repo_url}" "$REPO_DIR" || {
+  echo "!! Không clone được repo ${repo_url} (nhánh ${repo_branch})"
+  exit 1
+}
+chown -R ubuntu:ubuntu "$REPO_DIR"
+
+run_step() {
+  local script="$1"
+  if [ -f "$script" ]; then
+    echo "----- Chạy $script -----"
+    # Bỏ CRLF phòng trường hợp file được commit từ Windows
+    sed -i 's/\r$//' "$script"
+    if bash "$script"; then
+      echo "----- OK: $script -----"
+    else
+      echo "!!!!! LỖI: $script (xem log ở trên) !!!!!"
+    fi
+  else
+    echo "----- Bỏ qua: không tìm thấy $script -----"
+  fi
+}
+
+# Thứ tự: Jenkins trước để docker-sonar.sh thêm được user jenkins vào nhóm docker
+run_step "$REPO_DIR/scripts/jenkins.sh"
+run_step "$REPO_DIR/scripts/docker-sonar.sh"
+run_step "$REPO_DIR/scripts/trivy.sh"
+run_step "$REPO_DIR/monitoring/install-monitoring.sh"
+
+touch /var/log/user-data.done
+echo "===== user_data hoàn tất: $(date) ====="

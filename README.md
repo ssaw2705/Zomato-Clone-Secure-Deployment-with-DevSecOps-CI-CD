@@ -22,6 +22,8 @@ Nguồn app: [NotHarshhaa/Zomato-Clone](https://github.com/NotHarshhaa/Zomato-Cl
 | `Jenkinsfile` | Pipeline DevSecOps (Jenkins đọc từ repo) |
 | `sonar-project.properties` | Cấu hình SonarQube Scanner |
 | `scripts/` | Script cài Jenkins, Docker + SonarQube, Trivy trên EC2 |
+| `terraform/` | Tạo EC2 + Security Group + Key pair bằng Terraform, `user_data` tự cài công cụ ([hướng dẫn](terraform/README.md)) |
+| `monitoring/` | Prometheus + Node Exporter + Grafana `:3001` ([hướng dẫn](monitoring/README.md)) |
 | `docs/APP_README.md` | README gốc của app |
 
 ## Chạy app ở máy local
